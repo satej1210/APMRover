@@ -10,7 +10,7 @@ TauEncoderDR = 0.1;
 
 %%%%%%%%%%%%%%%%%%% control parameter %%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 1:speed, 2:angle
-KP1=10; %20;    % 1 is velocity controller
+KP1=2; %20;    % 1 is velocity controller
 KP2=3;%10;  %7 ->   % 2 is angle controller
 KI1=.5;%10;%0.3; %0.001; %0.001;%10;
 KI2=0.001; %0.001; %0.001;%1; % 3 ->

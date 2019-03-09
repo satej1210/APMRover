@@ -79,8 +79,8 @@ ros::Subscriber<std_msgs::Int16> subL("pwm_cmd_l",PWM_CMD_L);
  int enco_R_n = LOW;
 
  // For the left encoder
- int enco_L_A = 35;
- int enco_L_B = 36;
+ int enco_L_A = 36;
+ int enco_L_B = 35;
  int enco_L_pos = 0;
  int enco_L_ALast = LOW;
  int enco_L_n = LOW;
