@@ -6,13 +6,15 @@
 // Node initialisation
 ros::NodeHandle nh;
 
-int InA1 = 2; 
-int InA2 = 3;
+int InA1 = 3; 
+int InA2 = 2;
 int enabA = 4; // Enable pin
 
-int InB1 = 5; 
-int InB2 = 6;
+int InB1 = 6; 
+int InB2 = 5;
 int enabB = 7; // Enable pin
+
+int sonarAnalog = 0;
 
 // subscriber callback , when new message comes this will be called by susbscriber
 void PWM_CMD_R(const std_msgs::Int16& cmd_msg_R)
@@ -44,7 +46,6 @@ void PWM_CMD_R(const std_msgs::Int16& cmd_msg_R)
 void PWM_CMD_L(const std_msgs::Int16& cmd_msg_L)
 { 
   int pwm_cmdl = cmd_msg_L.data; // left wheel speed
-
   // for LEFT side wheels,
   if (pwm_cmdl > 0)
   { 
@@ -76,19 +77,27 @@ ros::Subscriber<std_msgs::Int16> subL("pwm_cmd_l",PWM_CMD_L);
  int enco_R_B = 30;
  int enco_R_pos = 0;
  int enco_R_ALast = LOW;
- int enco_R_n = LOW;
+ int enco_R_BLast = LOW;
 
  // For the left encoder
  int enco_L_A = 36;
  int enco_L_B = 35;
  int enco_L_pos = 0;
  int enco_L_ALast = LOW;
- int enco_L_n = LOW;
+ int enco_L_BLast = LOW;
+ 
+
 
 std_msgs::Int16 msg_R;
 std_msgs::Int16 msg_L;
+//std_msgs::Int16 msg_sonar;
+//ros::Publisher sonar("sonar", &msg_sonar);
 ros::Publisher enco_R("enco_R", &msg_R);
 ros::Publisher enco_L("enco_L", &msg_L);
+
+void updateSonar(){
+  
+}
 
 void setup() 
 {
@@ -108,21 +117,23 @@ void setup()
   pinMode(InB2,OUTPUT);
   analogWrite(InB2,0);
 
-  analogWriteFrequency(InA1,20000);
-  analogWriteFrequency(InA2,20000);
-  analogWriteFrequency(InB1,20000);
-  analogWriteFrequency(InB2,20000);
+  analogWriteFrequency(InA1,16000);
+  analogWriteFrequency(InA2,16000);
+  analogWriteFrequency(InB1,16000);
+  analogWriteFrequency(InB2,16000);
 
   // Define pinmode for the pins reading encoder data
   pinMode (enco_R_A,INPUT);
   pinMode (enco_R_B,INPUT);
   pinMode (enco_L_A,INPUT);
   pinMode (enco_L_B,INPUT);
+  //pinMode (A6, INPUT);
 
   attachInterrupt(enco_R_A, doEncoder_R_A, CHANGE);
   attachInterrupt(enco_R_B, doEncoder_R_B, CHANGE);
   attachInterrupt(enco_L_A, doEncoder_L_A, CHANGE);
   attachInterrupt(enco_L_B, doEncoder_L_B, CHANGE);
+  //attachInterrupt(A6, updateSonar, CHANGE);
 
   nh.initNode();
   
@@ -130,31 +141,41 @@ void setup()
   nh.subscribe(subL);
   nh.advertise(enco_R);
   nh.advertise(enco_L);
+  //nh.advertise(sonar);
+
+  pinMode(13, OUTPUT);
+  digitalWrite(13, HIGH);
 }
 
 void doEncoder_R_A() 
 {
   // look for a low-to-high on channel A
-  if (digitalRead(enco_R_A) == HIGH) 
+  if (digitalRead(enco_R_A) == HIGH && enco_R_ALast == LOW) 
   {
 
     // check channel B to see which way encoder is turning
-    if (digitalRead(enco_R_B) == LOW) {
+    if (digitalRead(enco_R_B) == LOW && enco_R_BLast == HIGH) {
       enco_R_pos = enco_R_pos + 1;         // CW
+      enco_R_BLast = LOW;
     }
-    else {
+    else if (digitalRead(enco_R_B) == HIGH && enco_R_BLast == LOW){
       enco_R_pos = enco_R_pos - 1;         // CCW
+      enco_R_BLast = HIGH;
+
     }
   }
 
-  else   // must be a high-to-low edge on channel A
+  else if (digitalRead(enco_R_A) == LOW && enco_R_ALast == HIGH)   // must be a high-to-low edge on channel A
   {
     // check channel B to see which way encoder is turning
-    if (digitalRead(enco_R_B) == HIGH) {
+    if (digitalRead(enco_R_B) == HIGH && enco_R_BLast == LOW) {
       enco_R_pos = enco_R_pos + 1;          // CW
+      enco_R_BLast = HIGH;
     }
-    else {
+    else if (digitalRead(enco_R_B) == LOW && enco_R_BLast == HIGH){
       enco_R_pos = enco_R_pos - 1;          // CCW
+      enco_R_BLast = LOW;
+
     }
   }
 
@@ -164,38 +185,46 @@ void doEncoder_R_A()
   //enco_R.publish(&msg_R);
   //enco_L.publish(&msg_L);
   
-  //Serial.println (encoder0Pos, DEC);
+  
   // use for debugging - remember to comment out
 }
 
 void doEncoder_R_B()
 {
   // look for a low-to-high on channel B
-  if (digitalRead(enco_R_B) == HIGH) 
+  if (digitalRead(enco_R_B) == HIGH && enco_R_BLast == LOW) 
   {
 
     // check channel A to see which way encoder is turning
-    if (digitalRead(enco_R_A) == HIGH) 
+    if (digitalRead(enco_R_A) == HIGH && enco_R_ALast == LOW) 
     {
       enco_R_pos = enco_R_pos + 1;         // CW
+      enco_R_ALast = HIGH;
+    
     }
-    else 
+    else if (digitalRead(enco_R_A) == LOW && enco_R_ALast == HIGH)
     {
       enco_R_pos = enco_R_pos - 1;         // CCW
+      enco_R_ALast = LOW;
+   
     }
   }
 
   // Look for a high-to-low on channel B
 
-  else {
+  else if (digitalRead(enco_R_B) == LOW && enco_R_BLast == HIGH) {
     // check channel B to see which way encoder is turning
-    if (digitalRead(enco_R_B) == LOW) 
+    if (digitalRead(enco_R_A) == LOW && enco_R_ALast == HIGH) 
     {
       enco_R_pos = enco_R_pos + 1;          // CW
+      enco_R_ALast = LOW;
+
     }
-    else 
+    else if (digitalRead(enco_R_A) == HIGH && enco_R_ALast == LOW) 
     {
       enco_R_pos = enco_R_pos - 1;          // CCW
+      enco_R_ALast = HIGH;
+ 
     }
   }
 
@@ -209,26 +238,34 @@ void doEncoder_R_B()
 void doEncoder_L_A() 
 {
   // look for a low-to-high on channel A
-  if (digitalRead(enco_L_A) == HIGH) 
+  if (digitalRead(enco_L_A) == HIGH && enco_L_ALast == LOW) 
   {
 
     // check channel B to see which way encoder is turning
-    if (digitalRead(enco_L_B) == LOW) {
+    if (digitalRead(enco_L_B) == LOW && enco_L_BLast == HIGH) {
       enco_L_pos = enco_L_pos + 1;         // CW
+       enco_L_BLast = LOW;
+
     }
-    else {
+    else if (digitalRead(enco_L_B) == HIGH && enco_L_BLast == LOW){
       enco_L_pos = enco_L_pos - 1;         // CCW
+       enco_L_BLast = HIGH;
+ 
     }
   }
 
-  else   // must be a high-to-low edge on channel A
+  else if (digitalRead(enco_L_A) == LOW && enco_L_ALast == HIGH)   // must be a high-to-low edge on channel A
   {
     // check channel B to see which way encoder is turning
-    if (digitalRead(enco_L_B) == HIGH) {
+    if (digitalRead(enco_L_B) == HIGH && enco_L_BLast == LOW) {
       enco_L_pos = enco_L_pos + 1;          // CW
+      enco_L_BLast = HIGH;
+
     }
-    else {
+    else if (digitalRead(enco_L_B) == LOW && enco_L_BLast == HIGH){
       enco_L_pos = enco_L_pos - 1;          // CCW
+      enco_L_BLast = LOW;
+    
     }
   }
 }
@@ -236,31 +273,39 @@ void doEncoder_L_A()
 void doEncoder_L_B()
 {
   // look for a low-to-high on channel B
-  if (digitalRead(enco_L_B) == HIGH) 
+  if (digitalRead(enco_L_B) == HIGH && enco_L_BLast == LOW) 
   {
 
     // check channel A to see which way encoder is turning
-    if (digitalRead(enco_L_A) == HIGH) 
+    if (digitalRead(enco_L_A) == HIGH && enco_L_ALast == LOW) 
     {
       enco_L_pos = enco_L_pos + 1;         // CW
+      enco_L_ALast = HIGH;
+
     }
-    else 
+    else if (digitalRead(enco_L_A) == LOW && enco_L_ALast == HIGH)
     {
       enco_L_pos = enco_L_pos - 1;         // CCW
+      enco_L_ALast = LOW;
+
     }
   }
 
   // Look for a high-to-low on channel B
 
-  else {
+  else if (digitalRead(enco_L_B) == LOW && enco_L_BLast == HIGH){
     // check channel B to see which way encoder is turning
-    if (digitalRead(enco_L_B) == LOW) 
+    if (digitalRead(enco_L_A) == LOW && enco_L_ALast == HIGH) 
     {
       enco_L_pos = enco_L_pos + 1;          // CW
+      enco_L_ALast = LOW;
+      
     }
-    else 
+    else if (digitalRead(enco_L_A) == HIGH && enco_L_ALast == LOW)
     {
       enco_L_pos = enco_L_pos - 1;          // CCW
+      enco_L_ALast = HIGH;
+
     }
   }
 }
@@ -269,11 +314,13 @@ void loop()
 {
   msg_R.data = enco_R_pos;
   msg_L.data = enco_L_pos;
+  //msg_sonar.data = analogRead(A6);
   
   enco_R.publish(&msg_R);
   enco_L.publish(&msg_L);
+  //sonar.publish(&msg_sonar);
   
   nh.spinOnce();  
 
-  delay(10);
+  delay(5);
 }
