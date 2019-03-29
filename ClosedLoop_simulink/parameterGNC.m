@@ -31,6 +31,6 @@ rp2 =  0.3;  % [m] radius of wayPoint proximity circle to switch to the next way
 Vcom = 3*VmaxDR/4; % [m/s] used when constant speed is commanded
 
 %%%%%%%%%%%%%%%%%% Way Points %%%%%%%%%%%%%%%%%%%%%%%%%%%
-X_array  = [2 2 0 0] %[1 3];%[3 3 1.5 0 ]; 
-Y_array  = [0 3 3 0]%[0 0];%[-2 0 -1.5 -0.25 ]; 
+X_array  = [1 2] %[1 3];%[3 3 1.5 0 ]; 
+Y_array  = [0 0]%[0 0];%[-2 0 -1.5 -0.25 ]; 
 %%%%%%%%%%%%%%%%%%% guidance parameter %%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -4,7 +4,7 @@ b = 0.32;%0.5842 ; % [m] Effective Platform Width = Diagonal length
 rNominal =  0.061679667; %[m] Nominal Wheel Radius
 %
 %Vmax = 0.43; %132/866.1417; % [m/s] Maximum speed of the vehicle
-Vmax = 0.85; % @100%, moves 2.14 m in 4 sec 
+Vmax = 0.705; % @100%, moves 2.14 m in 4 sec 
 Vmin = 0.45;
 % wMax = Vmax/rNominal; % [rad/s] Maximum angular speed of wheels % NOT USED
 
