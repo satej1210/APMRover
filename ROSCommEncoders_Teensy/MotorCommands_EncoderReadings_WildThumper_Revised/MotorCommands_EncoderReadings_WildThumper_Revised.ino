@@ -2,6 +2,7 @@
 #include <ros.h>
 #include <std_msgs/Int16MultiArray.h>
 #include <std_msgs/Int16.h>
+#include <sensor_msgs/Range.h>
 
 // Node initialisation
 ros::NodeHandle nh;
@@ -67,8 +68,12 @@ void PWM_CMD_L(const std_msgs::Int16& cmd_msg_L)
   }
 }
 
+
+
 ros::Subscriber<std_msgs::Int16> subR("pwm_cmd_r",PWM_CMD_R);
 ros::Subscriber<std_msgs::Int16> subL("pwm_cmd_l",PWM_CMD_L);
+ros::Subscriber<std_msgs::Int16> subencoReset("enco_rst",enco_CMD);
+
 
 // Encoder Pin numbers and state and Encoder Reading
  
@@ -87,11 +92,15 @@ ros::Subscriber<std_msgs::Int16> subL("pwm_cmd_l",PWM_CMD_L);
  int enco_L_BLast = LOW;
  
 
+void enco_CMD(const std_msgs::Int16& val){
+  enco_R_pos = 0;
+  enco_L_pos = 0;
+}
 
 std_msgs::Int16 msg_R;
 std_msgs::Int16 msg_L;
-//std_msgs::Int16 msg_sonar;
-//ros::Publisher sonar("sonar", &msg_sonar);
+sensor_msgs::Range msg_sonar;
+ros::Publisher sonar("sonar", &msg_sonar);
 ros::Publisher enco_R("enco_R", &msg_R);
 ros::Publisher enco_L("enco_L", &msg_L);
 
@@ -127,7 +136,7 @@ void setup()
   pinMode (enco_R_B,INPUT);
   pinMode (enco_L_A,INPUT);
   pinMode (enco_L_B,INPUT);
-  //pinMode (A6, INPUT);
+  pinMode (A6, INPUT);
 
   attachInterrupt(enco_R_A, doEncoder_R_A, CHANGE);
   attachInterrupt(enco_R_B, doEncoder_R_B, CHANGE);
@@ -141,7 +150,8 @@ void setup()
   nh.subscribe(subL);
   nh.advertise(enco_R);
   nh.advertise(enco_L);
-  //nh.advertise(sonar);
+  nh.subscribe(subencoReset);
+  nh.advertise(sonar);
 
   pinMode(13, OUTPUT);
   digitalWrite(13, HIGH);
@@ -314,11 +324,11 @@ void loop()
 {
   msg_R.data = enco_R_pos;
   msg_L.data = enco_L_pos;
-  //msg_sonar.data = analogRead(A6);
+  msg_sonar.range = analogRead(A6) / 0.0014168/1024;
   
   enco_R.publish(&msg_R);
   enco_L.publish(&msg_L);
-  //sonar.publish(&msg_sonar);
+  sonar.publish(&msg_sonar);
   
   nh.spinOnce();  
 
